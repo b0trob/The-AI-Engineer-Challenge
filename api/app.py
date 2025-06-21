@@ -221,29 +221,29 @@ async def delete_session(session_id: str):
     return {"message": "Session deleted successfully"}
 
 # Endpoint to list all active sessions
-@app.get("/api/sessions")
-async def list_sessions():
-    """List all active conversation sessions."""
-    sessions = []
-    for session_id, session_data in conversation_sessions.items():
-        sessions.append({
-            "session_id": session_id,
-            "developer_message": session_data["developer_message"],
-            "message_count": len(session_data["messages"]),
-            "created_at": session_data["created_at"].isoformat(),
-            "last_updated": session_data["last_updated"].isoformat()
-        })
+# @app.get("/api/sessions")
+# async def list_sessions():
+#     """List all active conversation sessions."""
+#     sessions = []
+#     for session_id, session_data in conversation_sessions.items():
+#         sessions.append({
+#             "session_id": session_id,
+#             "developer_message": session_data["developer_message"],
+#             "message_count": len(session_data["messages"]),
+#             "created_at": session_data["created_at"].isoformat(),
+#             "last_updated": session_data["last_updated"].isoformat()
+#         })
     
-    return {"sessions": sessions}
+#     return {"sessions": sessions}
 
 # Endpoint to clear all sessions
-@app.delete("/api/sessions")
-async def clear_all_sessions():
-    """Clear all conversation sessions."""
-    global conversation_sessions
-    session_count = len(conversation_sessions)
-    conversation_sessions.clear()
-    return {"message": f"Cleared {session_count} sessions"}
+# @app.delete("/api/sessions")
+# async def clear_all_sessions():
+#     """Clear all conversation sessions."""
+#     global conversation_sessions
+#     session_count = len(conversation_sessions)
+#     conversation_sessions.clear()
+#     return {"message": f"Cleared {session_count} sessions"}
 
 # Define a health check endpoint to verify API status
 @app.get("/api/health")

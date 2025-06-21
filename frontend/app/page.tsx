@@ -186,7 +186,7 @@ export default function Home() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          user_message: inputMessage,
+          user_message: newMessage.content,
           developer_message: developerMessage,
           api_key: apiKey,
           session_id: sessionId,
