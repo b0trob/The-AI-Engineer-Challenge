@@ -6,8 +6,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 # Import OpenAI client for interacting with OpenAI's API
 from openai import OpenAI
+from openai.types.chat import ChatCompletionMessageParam
 import os
-from typing import Optional
+import uuid
+from typing import Optional, Dict, List, Literal, TypedDict
+from datetime import datetime
+
+# Define a TypedDict for message structure for type safety
+class Message(TypedDict):
+    role: Literal["system", "user", "assistant"]
+    content: str
 
 # Initialize FastAPI application with a title
 app = FastAPI(title="OpenAI Chat API")
@@ -22,6 +30,10 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers in requests
 )
 
+# In-memory storage for conversation sessions
+# In a production environment, this should be replaced with a proper database
+conversation_sessions: Dict[str, Dict] = {}
+
 # Define the data model for chat requests using Pydantic
 # This ensures incoming request data is properly validated
 class ChatRequest(BaseModel):
@@ -29,6 +41,56 @@ class ChatRequest(BaseModel):
     user_message: str      # Message from the user
     model: Optional[str] = "gpt-4.1-mini"  # Optional model selection with default
     api_key: str          # OpenAI API key for authentication
+    session_id: Optional[str] = None  # Optional session ID for conversation continuity
+
+# Define the data model for session creation
+class SessionRequest(BaseModel):
+    developer_message: str  # Initial system message for the session
+
+# Define the data model for session deletion
+class SessionDeleteRequest(BaseModel):
+    session_id: str
+
+# Helper function to create a new conversation session
+def create_session(developer_message: str) -> str:
+    """Create a new conversation session with the given developer message."""
+    session_id = str(uuid.uuid4())
+    conversation_sessions[session_id] = {
+        "developer_message": developer_message,
+        "messages": [],
+        "created_at": datetime.now(),
+        "last_updated": datetime.now()
+    }
+    return session_id
+
+# Helper function to get conversation history for a session
+def get_conversation_history(session_id: str) -> List[ChatCompletionMessageParam]:
+    """Get the conversation history for a given session, formatted for the OpenAI API."""
+    if session_id not in conversation_sessions:
+        return []
+    
+    session = conversation_sessions[session_id]
+    # Start with the developer message as system message
+    messages: List[ChatCompletionMessageParam] = [{"role": "system", "content": session["developer_message"]}]
+    
+    # Add all previous messages in the conversation, formatting them correctly
+    for msg in session["messages"]:
+        # The type assertion is needed here because my stored dict is less specific
+        # than the ChatCompletionMessageParam. This is safe because I control the structure.
+        messages.append({"role": msg["role"], "content": msg["content"]})
+        
+    return messages
+
+# Helper function to add a message to the conversation history
+def add_message_to_history(session_id: str, role: str, content: str):
+    """Add a message to the conversation history for a given session."""
+    if session_id in conversation_sessions:
+        conversation_sessions[session_id]["messages"].append({
+            "role": role,
+            "content": content,
+            "timestamp": datetime.now()
+        })
+        conversation_sessions[session_id]["last_updated"] = datetime.now()
 
 # Define the main chat endpoint that handles POST requests
 @app.post("/api/chat")
@@ -37,37 +99,131 @@ async def chat(request: ChatRequest):
         # Initialize OpenAI client with the provided API key
         client = OpenAI(api_key=request.api_key)
         
+        # Handle session management: get session or create a new one
+        session_id = request.session_id
+        if not session_id or session_id not in conversation_sessions:
+            session_id = create_session(request.developer_message)
+        
+        # Get the conversation history BEFORE adding the new user message
+        messages_for_api = get_conversation_history(session_id)
+        
+        # Add the current user message to the conversation history for storage
+        add_message_to_history(session_id, "user", request.user_message)
+        
         # Create an async generator function for streaming responses
         async def generate():
-            # Create a streaming chat completion request
-            stream = client.chat.completions.create(
-                model=request.model,
-                messages=[
-                    {"role": "developer", "content": request.developer_message},
-                    {"role": "user", "content": request.user_message}
-                ],
-                stream=True  # Enable streaming response
-            )
-            
-            # Yield each chunk of the response as it becomes available
-            for chunk in stream:
-                if chunk.choices[0].delta.content is not None:
-                    yield chunk.choices[0].delta.content
+            try:
+                # Create a streaming chat completion request
+                # The user's message is passed separately, not in the `messages` list
+                stream = client.chat.completions.create(
+                    model=request.model or "gpt-4.1-mini",
+                    messages=messages_for_api,
+                    stream=True  # Enable streaming response
+                )
+                
+                assistant_response = ""
+                
+                # Yield each chunk of the response as it becomes available
+                for chunk in stream:
+                    if chunk.choices[0].delta.content is not None:
+                        content = chunk.choices[0].delta.content
+                        assistant_response += content
+                        yield content
+                
+                # Add the complete assistant response to history AFTER the response is generated
+                if assistant_response:
+                    add_message_to_history(session_id, "assistant", assistant_response)
+                    
+            except Exception as e:
+                # If there's an error during streaming, yield the error message
+                error_msg = f"Error during streaming: {str(e)}"
+                yield error_msg
 
-        # Return a streaming response to the client
-        return StreamingResponse(generate(), media_type="text/plain")
+        # Return a streaming response to the client with session_id in headers
+        response = StreamingResponse(generate(), media_type="text/plain")
+        response.headers["X-Session-ID"] = session_id
+        return response
     
     except Exception as e:
         # Handle any errors that occur during processing
         raise HTTPException(status_code=500, detail=str(e))
 
+# Endpoint to create a new conversation session
+@app.post("/api/sessions")
+async def create_session_endpoint(request: SessionRequest):
+    """Create a new conversation session."""
+    try:
+        session_id = create_session(request.developer_message)
+        return {
+            "session_id": session_id,
+            "message": "Session created successfully",
+            "created_at": conversation_sessions[session_id]["created_at"].isoformat()
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Endpoint to get session information
+@app.get("/api/sessions/{session_id}")
+async def get_session_info(session_id: str):
+    """Get information about a specific session."""
+    if session_id not in conversation_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    session = conversation_sessions[session_id]
+    return {
+        "session_id": session_id,
+        "developer_message": session["developer_message"],
+        "message_count": len(session["messages"]),
+        "created_at": session["created_at"].isoformat(),
+        "last_updated": session["last_updated"].isoformat()
+    }
+
+# Endpoint to delete a session
+@app.delete("/api/sessions/{session_id}")
+async def delete_session(session_id: str):
+    """Delete a conversation session."""
+    if session_id not in conversation_sessions:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    del conversation_sessions[session_id]
+    return {"message": "Session deleted successfully"}
+
+# Endpoint to list all active sessions
+@app.get("/api/sessions")
+async def list_sessions():
+    """List all active conversation sessions."""
+    sessions = []
+    for session_id, session_data in conversation_sessions.items():
+        sessions.append({
+            "session_id": session_id,
+            "developer_message": session_data["developer_message"],
+            "message_count": len(session_data["messages"]),
+            "created_at": session_data["created_at"].isoformat(),
+            "last_updated": session_data["last_updated"].isoformat()
+        })
+    
+    return {"sessions": sessions}
+
+# Endpoint to clear all sessions
+@app.delete("/api/sessions")
+async def clear_all_sessions():
+    """Clear all conversation sessions."""
+    global conversation_sessions
+    session_count = len(conversation_sessions)
+    conversation_sessions.clear()
+    return {"message": f"Cleared {session_count} sessions"}
+
 # Define a health check endpoint to verify API status
 @app.get("/api/health")
 async def health_check():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "active_sessions": len(conversation_sessions),
+        "timestamp": datetime.now().isoformat()
+    }
 
 # Entry point for running the application directly
 if __name__ == "__main__":
     import uvicorn
-    # Start the server on all network interfaces (0.0.0.0) on port 8000
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Start the server on localhost only (127.0.0.1) on port 8000 for security
+    uvicorn.run(app, host="127.0.0.1", port=8000)
