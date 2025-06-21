@@ -29,7 +29,7 @@ app.add_middleware(
     allow_credentials=True,  # Allows cookies to be included in requests
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers in requests
-    expose_headers=["X-Session-ID"],  # Expose custom headers to the browser
+    expose_headers=["X-Session-ID", "X-RateLimit-Limit", "X-RateLimit-Remaining"],  # Expose custom headers
 )
 
 # In-memory storage for conversation sessions
@@ -98,7 +98,6 @@ def add_message_to_history(session_id: str, role: str, content: str):
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
     # --- API Key Validation ---
-    # Immediately reject requests with a malformed API key.
     if not re.match(r"^sk-proj-[A-Za-z0-9\-_]{156}$", request.api_key):
         raise HTTPException(
             status_code=400,
@@ -106,56 +105,80 @@ async def chat(request: ChatRequest):
         )
         
     try:
-        # Initialize OpenAI client with the provided API key
         client = OpenAI(api_key=request.api_key)
         
-        # Handle session management: get session or create a new one
         session_id = request.session_id
         if not session_id or session_id not in conversation_sessions:
             session_id = create_session(request.developer_message)
             
-        # Add the current user message to the conversation history for storage
         add_message_to_history(session_id, "user", request.user_message)
         
-        # Get the complete conversation history, including the latest user message
         messages_for_api = get_conversation_history(session_id)
+
+        api_response = client.chat.completions.with_raw_response.create(
+            model=request.model or "gpt-4.1-mini",
+            messages=messages_for_api,
+            stream=True
+        )
+
+        limit_requests = api_response.headers.get("x-ratelimit-limit-requests")
+        remaining_requests = api_response.headers.get("x-ratelimit-remaining-requests")
         
-        # Create an async generator function for streaming responses
         async def generate():
             try:
-                # Create a streaming chat completion request with the full conversation history
-                stream = client.chat.completions.create(
-                    model=request.model or "gpt-4.1-mini",
-                    messages=messages_for_api,
-                    stream=True  # Enable streaming response
-                )
-                
                 assistant_response = ""
-                
-                # Yield each chunk of the response as it becomes available
-                for chunk in stream:
+                for chunk in api_response.parse():
                     if chunk.choices[0].delta.content is not None:
                         content = chunk.choices[0].delta.content
                         assistant_response += content
                         yield content
-                
-                # Add the complete assistant response to history
-                if assistant_response:
-                    add_message_to_history(session_id, "assistant", assistant_response)
-                    
+                add_message_to_history(session_id, "assistant", assistant_response)
             except Exception as e:
-                # If there's an error during streaming, yield the error message
                 error_msg = f"Error during streaming: {str(e)}"
                 yield error_msg
 
-        # Return a streaming response to the client with session_id in headers
         response = StreamingResponse(generate(), media_type="text/plain")
+        
+        if limit_requests:
+            response.headers["X-RateLimit-Limit"] = limit_requests
+        if remaining_requests:
+            response.headers["X-RateLimit-Remaining"] = remaining_requests
+            
         response.headers["X-Session-ID"] = session_id
         return response
     
     except Exception as e:
-        # Handle any errors that occur during processing
         raise HTTPException(status_code=500, detail=str(e))
+
+# --- New Endpoint for API Usage ---
+class ApiKeyRequest(BaseModel):
+    api_key: str
+
+# --- Simple API Key Test Endpoint ---
+@app.post("/api/test-key")
+async def test_api_key(request: ApiKeyRequest):
+    """
+    Simple endpoint to test if an API key is valid without making expensive calls.
+    """
+    if not re.match(r"^sk-proj-[A-Za-z0-9\-_]{156}$", request.api_key):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid API Key format."
+        )
+
+    try:
+        client = OpenAI(api_key=request.api_key)
+        # Just try to list models - this is usually the cheapest call
+        models = client.models.list()
+        return {"valid": True, "message": f"API key is valid. Found {len(models.data)} models."}
+    except Exception as e:
+        error_msg = str(e)
+        if "authentication" in error_msg.lower() or "401" in error_msg:
+            return {"valid": False, "message": "Authentication failed. Please check your API key."}
+        elif "permission" in error_msg.lower() or "403" in error_msg:
+            return {"valid": False, "message": "Permission denied. Your API key may not have the required permissions."}
+        else:
+            return {"valid": False, "message": f"API key test failed: {error_msg}"}
 
 # Endpoint to create a new conversation session
 @app.post("/api/sessions")
@@ -234,5 +257,12 @@ async def health_check():
 # Entry point for running the application directly
 if __name__ == "__main__":
     import uvicorn
-    # Start the server on localhost only (127.0.0.1) on port 8000 for security
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    # Check if we're in production (Vercel sets VERCEL environment variable)
+    is_production = os.getenv("VERCEL") == "1"
+    
+    if is_production:
+        # In production (Vercel), bind to 0.0.0.0 to accept external connections
+        uvicorn.run(app, host="0.0.0.0", port=int(os.getenv("PORT", 8000)))
+    else:
+        # In development, bind to localhost only (127.0.0.1) for security
+        uvicorn.run(app, host="127.0.0.1", port=8000)

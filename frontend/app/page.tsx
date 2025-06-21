@@ -1,12 +1,42 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Send, Bot, User, Settings, Key, Trash2, HelpCircle } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
   timestamp: Date
+}
+
+// Get API base URL from environment or use relative path for local development
+const getApiBaseUrl = () => {
+  // Check if we're in production (not localhost)
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    // Use environment variable if available, otherwise construct from current domain
+    const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (envApiUrl) {
+      return envApiUrl;
+    }
+    
+    // If no environment variable, try to construct from current domain
+    // This assumes the API is deployed to a subdomain or different path
+    const currentHost = window.location.hostname;
+    const currentProtocol = window.location.protocol;
+    
+    // For Vercel deployments, the API might be at a different URL
+    // You can customize this based on your actual deployment setup
+    if (currentHost.includes('vercel.app')) {
+      // Replace with your actual API Vercel URL
+      return 'https://your-api-project.vercel.app';
+    }
+    
+    // Fallback to same domain but different path
+    return `${currentProtocol}//${currentHost}`;
+  }
+  
+  // In development, use relative path (will work with local FastAPI server)
+  return '';
 }
 
 const models = [
@@ -25,16 +55,17 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [apiKey, setApiKey] = useState('')
+  const [apiKey, setApiKey] = useState<string>('')
   const [developerMessage, setDeveloperMessage] = useState(predefinedPrompts[0].prompt)
   const [model, setModel] = useState(models[0].value)
   const [showSettings, setShowSettings] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [showApiKeyHelp, setShowApiKeyHelp] = useState(false)
+  const [isApiKeyValid, setIsApiKeyValid] = useState<boolean>(false)
   const [apiKeyError, setApiKeyError] = useState<string | null>(null)
+  const [isLoadingValidation, setIsLoadingValidation] = useState<boolean>(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // On component mount, try to load the API key from session storage.
   useEffect(() => {
     const storedApiKey = sessionStorage.getItem('openai_api_key');
     if (storedApiKey) {
@@ -43,21 +74,51 @@ export default function Home() {
     }
   }, []);
 
-  const validateApiKey = (key: string) => {
-    if (key && !/^sk-proj-[A-Za-z0-9\-_]{156}$/.test(key)) {
-      setApiKeyError("Invalid API key format. Key must start with 'sk-proj-' and be 164 characters long.");
-    } else {
-      setApiKeyError(null);
+  const validateApiKey = async (key: string) => {
+    const keyRegex = /^sk-proj-[A-Za-z0-9\-_]{156}$/;
+    if (!keyRegex.test(key)) {
+      setApiKeyError("Invalid API Key format. Please check your key.");
+      setIsApiKeyValid(false);
+      return;
+    }
+
+    setApiKeyError(null);
+    setIsLoadingValidation(true);
+
+    try {
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/api/test-key`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ api_key: key }),
+      });
+
+      const data = await response.json();
+      
+      if (!data.valid) {
+        throw new Error(data.message);
+      }
+
+      setIsApiKeyValid(true);
+    } catch (error: any) {
+      setApiKeyError(error.message);
+      setIsApiKeyValid(false);
+    } finally {
+      setIsLoadingValidation(false);
     }
   };
 
   const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newApiKey = e.target.value;
     setApiKey(newApiKey);
-    validateApiKey(newApiKey);
-    // Use sessionStorage to persist the key only for the current session.
-    // This is more secure than localStorage as it's cleared when the tab closes.
-    sessionStorage.setItem('openai_api_key', newApiKey);
+    if (newApiKey) {
+      sessionStorage.setItem('openai_api_key', newApiKey);
+      validateApiKey(newApiKey);
+    } else {
+      sessionStorage.removeItem('openai_api_key');
+      setApiKeyError(null);
+      setIsApiKeyValid(false);
+    }
   };
 
   const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -85,86 +146,69 @@ export default function Home() {
     setSessionId(null)
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!inputMessage.trim() || !apiKey.trim()) return
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputMessage.trim() || !isApiKeyValid) return;
 
-    const userMessage = inputMessage.trim()
-    setInputMessage('')
-    setIsLoading(true)
-
-    // Add user message to chat
-    const newUserMessage: Message = {
-      role: 'user',
-      content: userMessage,
-      timestamp: new Date()
-    }
-    setMessages(prev => [...prev, newUserMessage])
+    const newMessage = { role: 'user', content: inputMessage, timestamp: new Date() };
+    setInputMessage('');
+    setIsLoading(true);
 
     try {
-      // Use explicit IPv4 localhost to avoid IPv6 issues
-      const response = await fetch('http://127.0.0.1:8000/api/chat', {
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/api/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: JSON.stringify({ 
+          user_message: inputMessage,
           developer_message: developerMessage,
-          user_message: userMessage,
-          model: model,
           api_key: apiKey,
-          session_id: sessionId  // Include session ID for conversation continuity
+          session_id: sessionId,
+          model: model
         }),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        throw new Error('Failed to send message');
       }
 
-      // Extract session ID from response headers if not already set
-      const responseSessionId = response.headers.get('X-Session-ID')
-      if (responseSessionId && !sessionId) {
-        setSessionId(responseSessionId)
-      }
-
-      const reader = response.body?.getReader()
-      if (!reader) throw new Error('No response body')
-
-      let assistantMessage = ''
-      const newAssistantMessage: Message = {
-        role: 'assistant',
-        content: '',
-        timestamp: new Date()
-      }
-      setMessages(prev => [...prev, newAssistantMessage])
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let assistantMessage = '';
 
       while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
+        const { done, value } = await reader.read();
+        if (done) break;
 
-        const chunk = new TextDecoder().decode(value)
-        assistantMessage += chunk
-        
-        // Update the last message (assistant's message)
+        const chunk = decoder.decode(value);
+        assistantMessage += chunk;
         setMessages(prev => {
-          const newMessages = [...prev]
-          newMessages[newMessages.length - 1].content = assistantMessage
-          return newMessages
-        })
+          const newMessages = [...prev];
+          const lastMessage = newMessages[newMessages.length - 1];
+          if (lastMessage && lastMessage.role === 'assistant') {
+            lastMessage.content = assistantMessage;
+          } else {
+            newMessages.push({ role: 'assistant', content: assistantMessage, timestamp: new Date() });
+          }
+          return newMessages;
+        });
+      }
+
+      // Get session ID from response headers
+      const newSessionId = response.headers.get('X-Session-ID');
+      if (newSessionId && newSessionId !== sessionId) {
+        setSessionId(newSessionId);
       }
 
     } catch (error) {
-      console.error('Error:', error)
-      const errorMessage: Message = {
-        role: 'assistant',
-        content: `Error: ${error instanceof Error ? error.message : 'An error occurred'}`,
-        timestamp: new Date()
-      }
-      setMessages(prev => [...prev, errorMessage])
+      console.error('Error:', error);
+      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, there was an error processing your request.', timestamp: new Date() }]);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -240,25 +284,19 @@ export default function Home() {
             <h3 className="text-base sm:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Configuration</h3>
             
             <div className="space-y-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  OpenAI API Key
-                  <button onClick={() => setShowApiKeyHelp(true)} className="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
-                    <HelpCircle size={16} />
-                  </button>
-                </label>
-                <div className="relative">
-                  <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                  <input
-                    type="password"
-                    value={apiKey}
-                    onChange={handleApiKeyChange}
-                    placeholder="Enter your OpenAI API key"
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
-                  />
-                </div>
-                {apiKeyError && <p className="text-xs text-red-500 mt-1">{apiKeyError}</p>}
+              <div className="flex flex-col">
+                <label htmlFor="apiKey" className="text-sm font-medium text-gray-400 mb-1">OpenAI API Key</label>
+                <input
+                  id="apiKey"
+                  type="password"
+                  value={apiKey}
+                  onChange={handleApiKeyChange}
+                  className={`p-2 bg-gray-900 border ${apiKeyError ? 'border-red-500' : 'border-gray-600'} rounded-md text-white placeholder-gray-500 focus:ring-2 focus:ring-blue-500`}
+                  placeholder="sk-proj-..."
+                />
+                {apiKeyError && <p className="text-red-500 text-xs mt-1">{apiKeyError}</p>}
               </div>
+              {isLoadingValidation && <p className="text-gray-400 text-sm">Validating key...</p>}
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -315,7 +353,8 @@ export default function Home() {
             {messages.length === 0 ? (
               <div className="text-center text-gray-500 dark:text-gray-400 py-8">
                 <Bot className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm sm:text-base">Start a conversation by typing a message below</p>
+                <p className="text-sm sm:text-base">Set your API key and set model preferences using the "Settings" menu.</p>
+                <p className="text-sm sm:text-base">With a valid API key you can then start a conversation by typing a message below</p>
               </div>
             ) : (
               messages.map((message, index) => (
@@ -376,7 +415,7 @@ export default function Home() {
 
           {/* Input Form */}
           <div className="border-t border-gray-200 dark:border-gray-700 p-3 sm:p-4">
-            <form onSubmit={handleSubmit} className="flex gap-2">
+            <form onSubmit={handleSendMessage} className="flex gap-2">
               <input
                 type="text"
                 value={inputMessage}
