@@ -173,7 +173,8 @@ export default function Home() {
     e.preventDefault();
     if (!inputMessage.trim() || !isApiKeyValid) return;
 
-    const newMessage = { role: 'user', content: inputMessage, timestamp: new Date() };
+    const newMessage: Message = { role: 'user', content: inputMessage, timestamp: new Date() };
+    setMessages(prev => [...prev, newMessage]);
     setInputMessage('');
     setIsLoading(true);
 
