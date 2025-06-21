@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
-import { Send, Bot, User, Settings, Key } from 'lucide-react'
+import { Send, Bot, User, Settings, Key, Trash2, HelpCircle } from 'lucide-react'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -9,15 +9,40 @@ interface Message {
   timestamp: Date
 }
 
+const models = [
+  { value: 'gpt-4.1-mini', name: 'GPT-4.1 Mini', description: 'Fastest and most affordable model, great for simple tasks and quick chats.' },
+  { value: 'gpt-4', name: 'GPT-4', description: 'Powerful and capable model, ideal for complex reasoning and multi-step tasks.' },
+  { value: 'gpt-3.5-turbo', name: 'GPT-3.5 Turbo', description: 'A solid balance of speed, performance, and cost-effectiveness.' }
+];
+
+const predefinedPrompts = [
+  { name: 'Default', prompt: 'You are a helpful AI assistant.' },
+  { name: 'Sarcastic Bot', prompt: 'You are a sarcastic bot. You provide witty, eye-rolling responses to every user request, but still begrudgingly provide the correct answer.' },
+  { name: 'ELI5 Explainer', prompt: 'You are an expert explainer who can break down complex topics into simple, easy-to-understand concepts, as if you were explaining it to a 5-year-old.' }
+];
+
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([])
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [apiKey, setApiKey] = useState('')
-  const [developerMessage, setDeveloperMessage] = useState('You are a helpful AI assistant.')
-  const [model, setModel] = useState('gpt-4.1-mini')
+  const [developerMessage, setDeveloperMessage] = useState(predefinedPrompts[0].prompt)
+  const [model, setModel] = useState(models[0].value)
   const [showSettings, setShowSettings] = useState(false)
+  const [sessionId, setSessionId] = useState<string | null>(null)
+  const [showApiKeyHelp, setShowApiKeyHelp] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setModel(e.target.value);
+  };
+
+  const handlePredefinedPromptChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedPrompt = predefinedPrompts.find(p => p.name === e.target.value)?.prompt;
+    if (selectedPrompt) {
+      setDeveloperMessage(selectedPrompt);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -26,6 +51,12 @@ export default function Home() {
   useEffect(() => {
     scrollToBottom()
   }, [messages])
+
+  // Function to clear conversation and start a new session
+  const clearConversation = () => {
+    setMessages([])
+    setSessionId(null)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -54,12 +85,19 @@ export default function Home() {
           developer_message: developerMessage,
           user_message: userMessage,
           model: model,
-          api_key: apiKey
+          api_key: apiKey,
+          session_id: sessionId  // Include session ID for conversation continuity
         }),
       })
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Extract session ID from response headers if not already set
+      const responseSessionId = response.headers.get('X-Session-ID')
+      if (responseSessionId && !sessionId) {
+        setSessionId(responseSessionId)
       }
 
       const reader = response.body?.getReader()
@@ -114,26 +152,73 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Settings Button */}
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow text-sm sm:text-base"
-          >
-            <Settings className="w-4 h-4" />
-            <span className="hidden sm:inline">Settings</span>
-            <span className="sm:hidden">⚙️</span>
-          </button>
+        {/* Settings and Controls */}
+        <div className="flex justify-end items-center mb-4">
+          {/* Controls */}
+          <div className="flex gap-2">
+            {messages.length > 0 && (
+              <button
+                onClick={clearConversation}
+                className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg shadow-md hover:shadow-lg transition-all text-sm sm:text-base"
+                title="Clear conversation"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Clear</span>
+              </button>
+            )}
+            <button
+              onClick={() => setShowSettings(!showSettings)}
+              className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-white dark:bg-gray-800 rounded-lg shadow-md hover:shadow-lg transition-shadow text-sm sm:text-base"
+            >
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Settings</span>
+              <span className="sm:hidden">⚙️</span>
+            </button>
+          </div>
         </div>
 
         {/* Settings Panel */}
         {showSettings && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 relative">
+            
+            {/* API Key Help Modal */}
+            {showApiKeyHelp && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-black bg-opacity-50">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl p-6 m-4 max-w-sm w-full">
+                  <h4 className="font-bold text-lg mb-2">What is an API Key?</h4>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    An API key is a secret token that authenticates your requests to the OpenAI service. It ensures that you are a valid user and tracks your usage.
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                    You can get your own free API key by signing up on the OpenAI platform.
+                  </p>
+                  <a 
+                    href="https://platform.openai.com/api-keys" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-500 hover:underline"
+                  >
+                    Get your API Key here
+                  </a>
+                  <button 
+                    onClick={() => setShowApiKeyHelp(false)}
+                    className="mt-4 w-full px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+            
             <h3 className="text-base sm:text-lg font-semibold mb-4 text-gray-900 dark:text-white">Configuration</h3>
-            <div className="space-y-4">
+            
+            <div className="space-y-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   OpenAI API Key
+                  <button onClick={() => setShowApiKeyHelp(true)} className="ml-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                    <HelpCircle size={16} />
+                  </button>
                 </label>
                 <div className="relative">
                   <Key className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -146,9 +231,23 @@ export default function Home() {
                   />
                 </div>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Developer Message
+                  AI Personality
+                </label>
+                <select
+                  onChange={handlePredefinedPromptChange}
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
+                >
+                  {predefinedPrompts.map(p => <option key={p.name}>{p.name}</option>)}
+                  <option>Custom</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  Developer Message (System Prompt)
                 </label>
                 <textarea
                   value={developerMessage}
@@ -157,20 +256,25 @@ export default function Home() {
                   rows={3}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  This message sets the context and personality for the AI. It acts as a guiding instruction for every response.
+                </p>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Model
                 </label>
                 <select
                   value={model}
-                  onChange={(e) => setModel(e.target.value)}
+                  onChange={handleModelChange}
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                 >
-                  <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
-                  <option value="gpt-4">GPT-4</option>
-                  <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                  {models.map(m => <option key={m.value} value={m.value}>{m.name}</option>)}
                 </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  {models.find(m => m.value === model)?.description}
+                </p>
               </div>
             </div>
           </div>
