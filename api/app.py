@@ -104,17 +104,16 @@ async def chat(request: ChatRequest):
         if not session_id or session_id not in conversation_sessions:
             session_id = create_session(request.developer_message)
         
-        # Get the conversation history BEFORE adding the new user message
-        messages_for_api = get_conversation_history(session_id)
-        
         # Add the current user message to the conversation history for storage
         add_message_to_history(session_id, "user", request.user_message)
+        
+        # Get the complete conversation history, including the latest user message
+        messages_for_api = get_conversation_history(session_id)
         
         # Create an async generator function for streaming responses
         async def generate():
             try:
-                # Create a streaming chat completion request
-                # The user's message is passed separately, not in the `messages` list
+                # Create a streaming chat completion request with the full conversation history
                 stream = client.chat.completions.create(
                     model=request.model or "gpt-4.1-mini",
                     messages=messages_for_api,
@@ -130,7 +129,7 @@ async def chat(request: ChatRequest):
                         assistant_response += content
                         yield content
                 
-                # Add the complete assistant response to history AFTER the response is generated
+                # Add the complete assistant response to history
                 if assistant_response:
                     add_message_to_history(session_id, "assistant", assistant_response)
                     
