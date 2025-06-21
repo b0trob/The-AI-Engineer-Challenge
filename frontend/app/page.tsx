@@ -44,8 +44,8 @@ export default function Home() {
   }, []);
 
   const validateApiKey = (key: string) => {
-    if (key && !/^sk-proj-[a-zA-Z0-9]{48}$/.test(key)) {
-      setApiKeyError("Invalid API key format. Key must start with 'sk-proj-' and be 56 characters long.");
+    if (key && !/^sk-proj-[A-Za-z0-9\-_]{156}$/.test(key)) {
+      setApiKeyError("Invalid API key format. Key must start with 'sk-proj-' and be 164 characters long.");
     } else {
       setApiKeyError(null);
     }
