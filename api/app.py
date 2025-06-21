@@ -9,6 +9,7 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletionMessageParam
 import os
 import uuid
+import re
 from typing import Optional, Dict, List, Literal, TypedDict
 from datetime import datetime
 
@@ -96,6 +97,14 @@ def add_message_to_history(session_id: str, role: str, content: str):
 # Define the main chat endpoint that handles POST requests
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
+    # --- API Key Validation ---
+    # Immediately reject requests with a malformed API key.
+    if not re.match(r"^sk-proj-[a-zA-Z0-9]{48}$", request.api_key):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid API Key format. The key should start with 'sk-proj-' and be 56 characters long."
+        )
+        
     try:
         # Initialize OpenAI client with the provided API key
         client = OpenAI(api_key=request.api_key)

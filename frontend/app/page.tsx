@@ -31,7 +31,34 @@ export default function Home() {
   const [showSettings, setShowSettings] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [showApiKeyHelp, setShowApiKeyHelp] = useState(false)
+  const [apiKeyError, setApiKeyError] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  // On component mount, try to load the API key from session storage.
+  useEffect(() => {
+    const storedApiKey = sessionStorage.getItem('openai_api_key');
+    if (storedApiKey) {
+      setApiKey(storedApiKey);
+      validateApiKey(storedApiKey);
+    }
+  }, []);
+
+  const validateApiKey = (key: string) => {
+    if (key && !/^sk-proj-[a-zA-Z0-9]{48}$/.test(key)) {
+      setApiKeyError("Invalid API key format. Key must start with 'sk-proj-' and be 56 characters long.");
+    } else {
+      setApiKeyError(null);
+    }
+  };
+
+  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newApiKey = e.target.value;
+    setApiKey(newApiKey);
+    validateApiKey(newApiKey);
+    // Use sessionStorage to persist the key only for the current session.
+    // This is more secure than localStorage as it's cleared when the tab closes.
+    sessionStorage.setItem('openai_api_key', newApiKey);
+  };
 
   const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setModel(e.target.value);
@@ -225,11 +252,12 @@ export default function Home() {
                   <input
                     type="password"
                     value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
+                    onChange={handleApiKeyChange}
                     placeholder="Enter your OpenAI API key"
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm sm:text-base"
                   />
                 </div>
+                {apiKeyError && <p className="text-xs text-red-500 mt-1">{apiKeyError}</p>}
               </div>
 
               <div>
@@ -354,12 +382,12 @@ export default function Home() {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder="Type your message..."
-                disabled={isLoading || !apiKey.trim()}
+                disabled={isLoading || !apiKey.trim() || !!apiKeyError}
                 className="flex-1 px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 text-sm sm:text-base"
               />
               <button
                 type="submit"
-                disabled={isLoading || !inputMessage.trim() || !apiKey.trim()}
+                disabled={isLoading || !inputMessage.trim() || !apiKey.trim() || !!apiKeyError}
                 className="px-3 py-2 sm:px-4 sm:py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Send className="w-4 h-4" />
