@@ -13,29 +13,39 @@ interface Message {
 const getApiBaseUrl = () => {
   // Check if we're in production (not localhost)
   if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    // Use environment variable if available, otherwise construct from current domain
+    // Use environment variable if available
     const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (envApiUrl) {
+      console.log('Using environment API URL:', envApiUrl);
       return envApiUrl;
     }
     
     // If no environment variable, try to construct from current domain
-    // This assumes the API is deployed to a subdomain or different path
     const currentHost = window.location.hostname;
     const currentProtocol = window.location.protocol;
     
-    // For Vercel deployments, the API might be at a different URL
-    // You can customize this based on your actual deployment setup
+    // For Vercel deployments, try different patterns
     if (currentHost.includes('vercel.app')) {
-      // Replace with your actual API Vercel URL
-      return 'https://your-api-project.vercel.app';
+      // Try to construct API URL from frontend URL
+      // If your frontend is at: https://my-frontend.vercel.app
+      // And your API is at: https://my-api.vercel.app
+      // You can set NEXT_PUBLIC_API_URL=https://my-api.vercel.app
+      
+      // For now, let's try the same domain but different path
+      const apiUrl = `${currentProtocol}//${currentHost}`;
+      console.log('Constructed API URL:', apiUrl);
+      console.log('⚠️  If this doesn\'t work, please set NEXT_PUBLIC_API_URL environment variable');
+      return apiUrl;
     }
     
     // Fallback to same domain but different path
-    return `${currentProtocol}//${currentHost}`;
+    const fallbackUrl = `${currentProtocol}//${currentHost}`;
+    console.log('Using fallback API URL:', fallbackUrl);
+    return fallbackUrl;
   }
   
   // In development, use relative path (will work with local FastAPI server)
+  console.log('Development mode - using relative API paths');
   return '';
 }
 
@@ -87,13 +97,25 @@ export default function Home() {
 
     try {
       const apiBaseUrl = getApiBaseUrl();
-      const response = await fetch(`${apiBaseUrl}/api/test-key`, {
+      const fullUrl = `${apiBaseUrl}/api/test-key`;
+      console.log('Attempting to validate API key at:', fullUrl);
+      
+      const response = await fetch(fullUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ api_key: key }),
       });
 
+      console.log('API response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      }
+
       const data = await response.json();
+      console.log('API validation response:', data);
       
       if (!data.valid) {
         throw new Error(data.message);
@@ -101,7 +123,8 @@ export default function Home() {
 
       setIsApiKeyValid(true);
     } catch (error: any) {
-      setApiKeyError(error.message);
+      console.error('API key validation error:', error);
+      setApiKeyError(error.message || 'Failed to validate API key');
       setIsApiKeyValid(false);
     } finally {
       setIsLoadingValidation(false);
