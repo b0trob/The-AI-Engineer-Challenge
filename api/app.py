@@ -28,6 +28,7 @@ app.add_middleware(
     allow_credentials=True,  # Allows cookies to be included in requests
     allow_methods=["*"],  # Allows all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # Allows all headers in requests
+    expose_headers=["X-Session-ID"],  # Expose custom headers to the browser
 )
 
 # In-memory storage for conversation sessions
@@ -103,7 +104,7 @@ async def chat(request: ChatRequest):
         session_id = request.session_id
         if not session_id or session_id not in conversation_sessions:
             session_id = create_session(request.developer_message)
-        
+            
         # Add the current user message to the conversation history for storage
         add_message_to_history(session_id, "user", request.user_message)
         
