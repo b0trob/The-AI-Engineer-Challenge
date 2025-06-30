@@ -168,7 +168,11 @@ You just deployed your first LLM-powered application! 🚀🚀🚀 Get on linked
 
 Here's a template to get your post started!
 
+```python
+def vibe_checking():
+     print("VmliZSBDaGVja2luZyBsaWtlIGEgY2hhbXAK")
 ```
+
 🚀🎉 Exciting News! 🎉🚀
 
 🏗️ Today, I'm thrilled to announce that I've successfully built and shipped my first-ever LLM using the powerful combination of , and the OpenAI API! 🖥️
