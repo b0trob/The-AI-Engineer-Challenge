@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User, Settings, Trash2 } from 'lucide-react'
-import ThemeToggle from './components/ThemeToggle'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -236,23 +235,16 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen pt-20 animate-in">
       <div className="container mx-auto px-4 py-4 sm:py-8 max-w-4xl">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-4 sm:mb-8 animate-in">
           <div className="text-center sm:text-left">
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text mb-2">
-              Simple OpenAI
-            </h1>
             <p className="text-sm sm:text-base text-foreground">
               Chat with AI using the FastAPI backend
             </p>
           </div>
-          <div className="mt-4 sm:mt-0">
-            <ThemeToggle />
-          </div>
         </div>
-
         {/* Settings and Controls */}
         <div className="flex justify-end items-center mb-4">
           {/* Controls */}
@@ -267,85 +259,8 @@ export default function Home() {
                 <span className="hidden sm:inline">Clear</span>
               </button>
             )}
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="flex items-center gap-2 px-3 py-2 sm:px-4 sm:py-2 bg-secondary hover:bg-accent rounded-lg shadow-md hover:shadow-lg transition-shadow text-sm sm:text-base text-secondary-foreground"
-            >
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
-              <span className="sm:hidden">⚙️</span>
-            </button>
           </div>
         </div>
-
-        {/* Settings Panel */}
-        {showSettings && (
-          <div className="glass rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 relative animate-in">
-            <h3 className="text-base sm:text-lg font-semibold mb-4 text-foreground">Configuration</h3>
-            
-            <div className="space-y-6">
-              <div className="flex flex-col">
-                <label htmlFor="apiKey" className="text-sm font-medium text-foreground mb-1">OpenAI API Key</label>
-                <input
-                  id="apiKey"
-                  type="password"
-                  value={apiKey}
-                  onChange={handleApiKeyChange}
-                  className={`p-2 bg-input border ${apiKeyError ? 'border-destructive' : 'border-border'} rounded-md text-foreground placeholder-muted-foreground focus:ring-2 focus:ring-ring`}
-                  placeholder="sk-proj-..."
-                />
-                {apiKeyError && <p className="text-destructive text-xs mt-1">{apiKeyError}</p>}
-              </div>
-              {isLoadingValidation && <p className="text-muted-foreground text-sm">Validating key...</p>}
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  AI Personality
-                </label>
-                <select
-                  onChange={handlePredefinedPromptChange}
-                  className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-input text-foreground text-sm sm:text-base"
-                >
-                  {predefinedPrompts.map(p => <option key={p.name}>{p.name}</option>)}
-                  <option>Custom</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Developer Message (System Prompt)
-                </label>
-                <textarea
-                  value={developerMessage}
-                  onChange={(e) => setDeveloperMessage(e.target.value)}
-                  placeholder="System prompt for the AI"
-                  rows={3}
-                  className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-input text-foreground text-sm sm:text-base"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  This message sets the context and personality for the AI. It acts as a guiding instruction for every response.
-                </p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Model
-                </label>
-                <select
-                  value={model}
-                  onChange={handleModelChange}
-                  className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-ring focus:border-transparent bg-input text-foreground text-sm sm:text-base"
-                >
-                  {models.map(m => <option key={m.value} value={m.value}>{m.name}</option>)}
-                </select>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {models.find(m => m.value === model)?.description}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Chat Container */}
         <div className="glass rounded-lg shadow-lg overflow-hidden flex flex-col h-[calc(100vh-12rem)] sm:h-[calc(100vh-16rem)] md:h-[calc(100vh-20rem)] animate-in">
           {/* Messages */}
@@ -353,7 +268,7 @@ export default function Home() {
             {messages.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
                 <Bot className="w-8 h-8 sm:w-12 sm:h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-sm sm:text-base">Set your API key and set model preferences using the "Settings" menu.</p>
+                <p className="text-sm sm:text-base">Set your API key and set model preferences using the Settings page.</p>
                 <p className="text-sm sm:text-base">With a valid API key you can then start a conversation by typing a message below</p>
               </div>
             ) : (
@@ -412,7 +327,6 @@ export default function Home() {
             )}
             <div ref={messagesEndRef} />
           </div>
-
           {/* Input Form */}
           <div className="border-t border-border p-3 sm:p-4">
             <form onSubmit={handleSendMessage} className="flex gap-2">

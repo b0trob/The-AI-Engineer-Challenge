@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
-    appDir: true,
+    // appDir: true, // Removed as it's not needed in Next.js 14+
   },
   async rewrites() {
     return [
