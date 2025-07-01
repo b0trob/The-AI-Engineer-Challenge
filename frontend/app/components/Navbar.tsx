@@ -1,5 +1,6 @@
+"use client";
+
 import Link from 'next/link';
-import ThemeToggle from './ThemeToggle';
 import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
@@ -17,17 +18,6 @@ export default function Navbar() {
       {/* Centered Navigation */}
       <div className="flex gap-4">
         <Link
-          href="/"
-          className={`text-sm font-medium px-3 py-2 rounded-md transition-all duration-200 ${
-            pathname === '/' 
-              ? 'bg-accent text-accent-foreground shadow-sm' 
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-          }`}
-          aria-current={pathname === '/' ? 'page' : undefined}
-        >
-          Chat
-        </Link>
-        <Link
           href="/settings"
           className={`text-sm font-medium px-3 py-2 rounded-md transition-all duration-200 ${
             pathname === '/settings' 
@@ -38,11 +28,6 @@ export default function Navbar() {
         >
           Settings
         </Link>
-      </div>
-      
-      {/* Theme Toggle Section */}
-      <div className="flex items-center">
-        <ThemeToggle />
       </div>
     </nav>
   );
