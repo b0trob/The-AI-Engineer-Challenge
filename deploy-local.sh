@@ -36,28 +36,16 @@ command_exists() {
 
 # Function to check Python version
 check_python_version() {
-    if command_exists python3; then
-        PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}' | cut -d. -f1,2)
-        if [[ $(echo "$PYTHON_VERSION >= 3.8" | bc -l) -eq 1 ]]; then
-            print_success "Python $PYTHON_VERSION found"
-            PYTHON_CMD="python3"
-        else
-            print_error "Python 3.8+ required, found $PYTHON_VERSION"
-            exit 1
-        fi
-    elif command_exists python; then
-        PYTHON_VERSION=$(python --version 2>&1 | awk '{print $2}' | cut -d. -f1,2)
-        if [[ $(echo "$PYTHON_VERSION >= 3.8" | bc -l) -eq 1 ]]; then
-            print_success "Python $PYTHON_VERSION found"
-            PYTHON_CMD="python"
-        else
-            print_error "Python 3.8+ required, found $PYTHON_VERSION"
-            exit 1
-        fi
-    else
-        print_error "Python not found. Please install Python 3.8+"
-        exit 1
-    fi
+PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
+PYTHON_MAJOR=$(echo $PYTHON_VERSION | cut -d. -f1)
+PYTHON_MINOR=$(echo $PYTHON_VERSION | cut -d. -f2)
+if [[ $PYTHON_MAJOR -eq 3 && $PYTHON_MINOR -ge 8 ]] || [[ $PYTHON_MAJOR -gt 3 ]]; then
+    print_success "Python $PYTHON_VERSION found"
+    PYTHON_CMD="python3"
+else
+    print_error "Python 3.8+ required, found $PYTHON_VERSION"
+    exit 1
+fi
 }
 
 # Function to check Node.js version
