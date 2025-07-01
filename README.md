@@ -1,4 +1,4 @@
-# AI Engineer Challenge
+# Simple OpenAI
 
 A full-stack LLM chat application built with FastAPI backend and Next.js frontend, designed for deployment on Vercel.
 
@@ -45,8 +45,8 @@ Before starting, ensure you have the following installed:
 ### Step 1: Clone the Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/The-AI-Engineer-Challenge.git
-cd The-AI-Engineer-Challenge
+git clone https://github.com/YOUR_USERNAME/Simple-OpenAI.git
+cd Simple-OpenAI
 ```
 
 ### Step 2: Backend Setup

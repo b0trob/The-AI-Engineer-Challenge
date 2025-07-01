@@ -6,8 +6,8 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'AI Engineer Challenge - Chat Interface',
-  description: 'A modern chat interface for the AI Engineer Challenge',
+  title: 'Simple OpenAI - Chat Interface',
+  description: 'A modern chat interface for Simple OpenAI',
 }
 
 export default function RootLayout({

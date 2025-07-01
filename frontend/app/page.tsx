@@ -242,7 +242,7 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row items-center justify-between mb-4 sm:mb-8 animate-in">
           <div className="text-center sm:text-left">
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text mb-2">
-              AI Engineer Challenge
+              Simple OpenAI
             </h1>
             <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
               Chat with AI using the FastAPI backend
