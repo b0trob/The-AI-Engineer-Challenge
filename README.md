@@ -46,6 +46,8 @@ Before starting, ensure you have the following installed:
 
 For quick setup and testing, use the provided deployment scripts:
 
+#### Option 1: Traditional Setup (pip + venv)
+
 **Linux/macOS:**
 ```bash
 # Clone the repository
@@ -66,8 +68,35 @@ cd Simple-OpenAI
 deploy-local.bat
 ```
 
-The automated script will:
-- Check all prerequisites (Python 3.8+, Node.js 18+, npm)
+#### Option 2: Modern Setup with UV (Recommended)
+
+**Linux/macOS:**
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/Simple-OpenAI.git
+cd Simple-OpenAI
+
+# Install UV (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Run the UV deployment script
+./deploy-local-uv.sh
+```
+
+**Manual UV Setup:**
+```bash
+# Create environment and install dependencies
+uv sync
+
+# Start backend
+uv run python api/app.py
+
+# Start frontend (in another terminal)
+cd frontend && npm run dev
+```
+
+The automated scripts will:
+- Check all prerequisites (Python 3.8+, Node.js 18+, npm, UV)
 - Set up Python virtual environment
 - Install all dependencies
 - Test both backend and frontend startup
@@ -130,9 +159,18 @@ The frontend application will be available at `http://127.0.0.1:3000`
 
 Run the comprehensive test suite to validate your local setup:
 
-**Linux/macOS:**
+**Traditional Testing:**
 ```bash
 ./test-local.sh
+```
+
+**UV Testing:**
+```bash
+# Test with UV environment
+uv run pytest
+
+# Or run the UV deployment script which includes testing
+./deploy-local-uv.sh
 ```
 
 The test suite validates:
@@ -143,6 +181,27 @@ The test suite validates:
 - Service startup and accessibility
 - CORS configuration
 - API documentation
+
+### Environment Management with UV
+
+This project supports both traditional Python environment management and the modern UV approach:
+
+**UV Benefits:**
+- ⚡ **Faster**: UV is significantly faster than pip
+- 🔒 **Reliable**: Better dependency resolution
+- 📦 **Simple**: Single tool for environment management
+- 🔄 **Reproducible**: Automatic lock file generation
+
+**Quick UV Commands:**
+```bash
+uv sync                    # Install all dependencies
+uv add <package>           # Add new dependency
+uv add --dev <package>     # Add dev dependency
+uv run python api/app.py   # Run with UV environment
+uv run pytest              # Run tests
+```
+
+For detailed UV setup instructions, see [UV Setup Guide](uv-setup.md).
 
 ## API Reference
 
