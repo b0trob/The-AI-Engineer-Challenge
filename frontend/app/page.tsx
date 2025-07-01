@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { Send, Bot, User, Settings, Key, Trash2, HelpCircle } from 'lucide-react'
+import ThemeToggle from './components/ThemeToggle'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -238,13 +239,18 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-4 sm:py-8 max-w-4xl">
         {/* Header */}
-        <div className="text-center mb-4 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-2">
-            AI Engineer Challenge
-          </h1>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
-            Chat with AI using the FastAPI backend
-          </p>
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-4 sm:mb-8 animate-in">
+          <div className="text-center sm:text-left">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text mb-2">
+              AI Engineer Challenge
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
+              Chat with AI using the FastAPI backend
+            </p>
+          </div>
+          <div className="mt-4 sm:mt-0">
+            <ThemeToggle />
+          </div>
         </div>
 
         {/* Settings and Controls */}
@@ -274,7 +280,7 @@ export default function Home() {
 
         {/* Settings Panel */}
         {showSettings && (
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 relative">
+          <div className="glass rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 relative animate-in">
             
             {/* API Key Help Modal */}
             {showApiKeyHelp && (
@@ -371,7 +377,7 @@ export default function Home() {
         )}
 
         {/* Chat Container */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col h-[calc(100vh-12rem)] sm:h-[calc(100vh-16rem)] md:h-[calc(100vh-20rem)]">
+        <div className="glass rounded-lg shadow-lg overflow-hidden flex flex-col h-[calc(100vh-12rem)] sm:h-[calc(100vh-16rem)] md:h-[calc(100vh-20rem)] animate-in">
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 sm:space-y-4">
             {messages.length === 0 ? (

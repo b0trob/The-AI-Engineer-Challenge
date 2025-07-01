@@ -5,5 +5,8 @@ alwaysApply: false
 ---
 ### README.md Rules
 
-- When you create README.md's - they should as clear as possible, and use fun and approachable language.
-- While being fun, they should remain technically accurate.
+- When you create README.md's - they should as clear as possible, and use technical but approachable language.
+- Always add a step by step on how to deploy stuff
+- DO NOT add emojis, stay professional but do not act like a general from the army.
+- Always add a section for troubleshooting using easy-access tools such as curl, wget, etc.
+- They should remain technically accurate, so always add references (links) to external resources such as official documentation.

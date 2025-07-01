@@ -5,22 +5,224 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+  --muted: #f8fafc;
+  --muted-foreground: #64748b;
+  --accent: #e0e7ff;
+  --accent-foreground: #3730a3;
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #ffffff;
+  --ring: #3b82f6;
+  --radius: 0.75rem;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --primary: #00ff41;
+    --primary-foreground: #000000;
+    --secondary: #1a1a1a;
+    --secondary-foreground: #ffffff;
+    --muted: #1a1a1a;
+    --muted-foreground: #a1a1aa;
+    --accent: #1a1a1a;
+    --accent-foreground: #00ff41;
+    --destructive: #dc2626;
+    --destructive-foreground: #ffffff;
+    --border: #27272a;
+    --input: #1a1a1a;
+    --ring: #00ff41;
   }
+}
+
+* {
+  border-color: hsl(var(--border));
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
+  font-feature-settings: "rlig" 1, "calt" 1;
 }
 
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Smooth animations */
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+  
+  .animate-in {
+    animation: animateIn 0.3s ease-out;
+  }
+  
+  .animate-out {
+    animation: animateOut 0.3s ease-in;
+  }
+  
+  .fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+  
+  .slide-in-from-bottom {
+    animation: slideInFromBottom 0.3s ease-out;
+  }
+  
+  .slide-in-from-top {
+    animation: slideInFromTop 0.3s ease-out;
+  }
+  
+  .scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+}
+
+@keyframes animateIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes animateOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Typing indicator animation */
+@keyframes typing {
+  0%, 20% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-6px);
+  }
+  60% {
+    transform: translateY(0);
+  }
+  80% {
+    transform: translateY(-3px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.typing-dot {
+  animation: typing 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Glass morphism effect */
+.glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.dark .gradient-text {
+  background: linear-gradient(135deg, #00ff41 0%, #00d4aa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 } 
