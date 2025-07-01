@@ -241,7 +241,7 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row items-center justify-between mb-4 sm:mb-8 animate-in">
           <div className="text-center sm:text-left">
             <p className="text-sm sm:text-base text-foreground">
-              Chat with AI using the FastAPI backend
+            Start a conversation with AI - ask questions, get help, or just chat
             </p>
           </div>
         </div>

@@ -3,21 +3,21 @@
 @tailwind utilities;
 
 :root {
-  --background: #f1f0e8;
-  --foreground: #0c3644;
-  --primary: #3b82f6;
+  --background: #faf9f6;
+  --foreground: #2d3748;
+  --primary: #3182ce;
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #002f3f;
-  --muted: #f8fafc;
-  --muted-foreground: #747c85;
-  --accent: #e0e7ff;
-  --accent-foreground: #eb0dbb;
-  --destructive: #ef4444;
+  --secondary: #f7fafc;
+  --secondary-foreground: #4a5568;
+  --muted: #f1f5f9;
+  --muted-foreground: #718096;
+  --accent: #e6fffa;
+  --accent-foreground: #2c7a7b;
+  --destructive: #e53e3e;
   --destructive-foreground: #ffffff;
   --border: #e2e8f0;
-  --input: #ffffff;
-  --ring: #3b82f6;
+  --input: #f7fafc;
+  --ring: #3182ce;
   --radius: 0.75rem;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
@@ -98,9 +98,9 @@ body {
 
 /* Glass morphism effect */
 .glass {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(247, 250, 252, 0.8);
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(226, 232, 240, 0.6);
 }
 
 .dark .glass {
