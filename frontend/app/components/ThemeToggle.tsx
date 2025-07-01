@@ -36,29 +36,26 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="relative inline-flex h-10 w-20 items-center justify-center rounded-full bg-gray-200 dark:bg-gray-800 transition-colors duration-300 hover:bg-gray-300 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
       aria-label="Toggle theme"
+      className="relative w-14 h-8 flex items-center rounded-full border border-border bg-input transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+      tabIndex={0}
     >
-      <span className="sr-only">Toggle theme</span>
-      
-      {/* Toggle track */}
-      <div className="relative h-6 w-16 rounded-full bg-white dark:bg-gray-900 shadow-inner transition-colors duration-300">
-        {/* Toggle handle */}
-        <div
-          className={`absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-blue-500 dark:bg-green-400 shadow-md transition-transform duration-300 ${
-            isDark ? 'translate-x-10' : 'translate-x-0'
-          }`}
-        />
-      </div>
-      
-      {/* Icons */}
-      <div className="absolute inset-0 flex items-center justify-between px-2 pointer-events-none">
-        <Sun className={`h-4 w-4 transition-colors duration-300 ${
-          isDark ? 'text-gray-400' : 'text-yellow-500'
-        }`} />
-        <Moon className={`h-4 w-4 transition-colors duration-300 ${
-          isDark ? 'text-green-400' : 'text-gray-400'
-        }`} />
+      {/* Track background highlight for dark mode */}
+      <div
+        className={`absolute inset-0 rounded-full transition-colors duration-300 pointer-events-none ${
+          isDark ? 'bg-primary/20' : 'bg-accent/30'
+        }`}
+      />
+      {/* Handle */}
+      <div
+        className={`absolute top-1 left-1 h-6 w-6 rounded-full bg-primary border border-border shadow-md flex items-center justify-center transition-transform duration-300 ${
+          isDark ? 'translate-x-6' : 'translate-x-0'
+        }`}
+        style={{ transition: 'transform 0.3s cubic-bezier(.4,2,.6,1)' }}
+      >
+        {/* Sun and Moon icons cross-fade */}
+        <Sun className={`absolute h-4 w-4 transition-opacity duration-300 ${isDark ? 'opacity-0' : 'opacity-100'} text-primary-foreground`} />
+        <Moon className={`absolute h-4 w-4 transition-opacity duration-300 ${isDark ? 'opacity-100' : 'opacity-0'} text-primary-foreground`} />
       </div>
     </button>
   )

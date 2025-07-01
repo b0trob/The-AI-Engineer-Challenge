@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState, useRef, useEffect, useCallback } from 'react'
-import { Send, Bot, User, Settings, Key, Trash2, HelpCircle } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Send, Bot, User, Settings, Trash2 } from 'lucide-react'
 import ThemeToggle from './components/ThemeToggle'
 
 interface Message {
@@ -71,7 +71,7 @@ export default function Home() {
   const [model, setModel] = useState(models[0].value)
   const [showSettings, setShowSettings] = useState(false)
   const [sessionId, setSessionId] = useState<string | null>(null)
-  const [showApiKeyHelp, setShowApiKeyHelp] = useState(false)
+
   const [isApiKeyValid, setIsApiKeyValid] = useState<boolean>(false)
   const [apiKeyError, setApiKeyError] = useState<string | null>(null)
   const [isLoadingValidation, setIsLoadingValidation] = useState<boolean>(false)
@@ -236,7 +236,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen">
       <div className="container mx-auto px-4 py-4 sm:py-8 max-w-4xl">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-4 sm:mb-8 animate-in">
@@ -244,7 +244,7 @@ export default function Home() {
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold gradient-text mb-2">
               Simple OpenAI
             </h1>
-            <p className="text-sm sm:text-base text-muted-foreground">
+            <p className="text-sm sm:text-base text-foreground">
               Chat with AI using the FastAPI backend
             </p>
           </div>
@@ -281,41 +281,11 @@ export default function Home() {
         {/* Settings Panel */}
         {showSettings && (
           <div className="glass rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-6 relative animate-in">
-            
-            {/* API Key Help Modal */}
-            {showApiKeyHelp && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-black bg-opacity-50">
-                <div className="bg-background border border-border rounded-lg shadow-2xl p-6 m-4 max-w-sm w-full">
-                  <h4 className="font-bold text-lg mb-2 text-foreground">What is an API Key?</h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    An API key is a secret token that authenticates your requests to the OpenAI service. It ensures that you are a valid user and tracks your usage.
-                  </p>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    You can get your own free API key by signing up on the OpenAI platform.
-                  </p>
-                  <a 
-                    href="https://platform.openai.com/api-keys" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    Get your API Key here
-                  </a>
-                  <button 
-                    onClick={() => setShowApiKeyHelp(false)}
-                    className="mt-4 w-full px-4 py-2 bg-secondary hover:bg-accent rounded-lg text-secondary-foreground"
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            )}
-            
             <h3 className="text-base sm:text-lg font-semibold mb-4 text-foreground">Configuration</h3>
             
             <div className="space-y-6">
               <div className="flex flex-col">
-                <label htmlFor="apiKey" className="text-sm font-medium text-muted-foreground mb-1">OpenAI API Key</label>
+                <label htmlFor="apiKey" className="text-sm font-medium text-foreground mb-1">OpenAI API Key</label>
                 <input
                   id="apiKey"
                   type="password"
