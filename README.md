@@ -42,14 +42,50 @@ Before starting, ensure you have the following installed:
 
 ## Local Development Setup
 
-### Step 1: Clone the Repository
+### Automated Setup (Recommended)
+
+For quick setup and testing, use the provided deployment scripts:
+
+**Linux/macOS:**
+```bash
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/Simple-OpenAI.git
+cd Simple-OpenAI
+
+# Run the automated deployment script
+./deploy-local.sh
+```
+
+**Windows:**
+```cmd
+# Clone the repository
+git clone https://github.com/YOUR_USERNAME/Simple-OpenAI.git
+cd Simple-OpenAI
+
+# Run the automated deployment script
+deploy-local.bat
+```
+
+The automated script will:
+- Check all prerequisites (Python 3.8+, Node.js 18+, npm)
+- Set up Python virtual environment
+- Install all dependencies
+- Test both backend and frontend startup
+- Run integration tests
+- Optionally start both services
+
+### Manual Setup
+
+If you prefer manual setup, follow these steps:
+
+#### Step 1: Clone the Repository
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/Simple-OpenAI.git
 cd Simple-OpenAI
 ```
 
-### Step 2: Backend Setup
+#### Step 2: Backend Setup
 
 Navigate to the API directory and set up the Python environment:
 
@@ -74,7 +110,7 @@ python app.py
 
 The API server will be available at `http://127.0.0.1:8000`
 
-### Step 3: Frontend Setup
+#### Step 3: Frontend Setup
 
 In a new terminal window, navigate to the frontend directory:
 
@@ -89,6 +125,24 @@ npm run dev
 ```
 
 The frontend application will be available at `http://127.0.0.1:3000`
+
+### Testing Before Deployment
+
+Run the comprehensive test suite to validate your local setup:
+
+**Linux/macOS:**
+```bash
+./test-local.sh
+```
+
+The test suite validates:
+- File structure and configuration
+- Dependencies installation
+- Backend API functionality
+- Frontend build process
+- Service startup and accessibility
+- CORS configuration
+- API documentation
 
 ## API Reference
 
@@ -333,6 +387,73 @@ vercel logs
 
 # Monitor function execution
 vercel logs --follow
+```
+
+## Local Deployment Scripts
+
+### Quick Start with Automated Scripts
+
+The project includes automated deployment scripts for easy local testing:
+
+#### Linux/macOS Deployment
+```bash
+# Make scripts executable (first time only)
+chmod +x deploy-local.sh test-local.sh
+
+# Run deployment script
+./deploy-local.sh
+
+# Run test suite
+./test-local.sh
+```
+
+#### Windows Deployment
+```cmd
+# Run deployment script
+deploy-local.bat
+```
+
+#### What the Scripts Do
+
+**deploy-local.sh/deploy-local.bat:**
+- Validates system prerequisites (Python 3.8+, Node.js 18+, npm)
+- Creates Python virtual environment
+- Installs all dependencies
+- Tests service startup
+- Runs integration tests
+- Optionally starts both services
+
+**test-local.sh:**
+- Comprehensive validation of all components
+- Tests API endpoints and functionality
+- Validates frontend build process
+- Checks configuration files
+- Provides detailed test results
+
+### Manual Testing Commands
+
+If you prefer manual testing, use these commands:
+
+#### Test Backend Health
+```bash
+curl -X GET http://127.0.0.1:8000/api/health
+```
+
+#### Test API Key Validation
+```bash
+curl -X POST http://127.0.0.1:8000/api/test-key \
+  -H "Content-Type: application/json" \
+  -d '{"api_key": "sk-proj-invalid-key-for-testing"}'
+```
+
+#### Test Frontend Build
+```bash
+cd frontend && npm run build
+```
+
+#### Test Python Dependencies
+```bash
+cd api && source venv/bin/activate && python -c "import fastapi, uvicorn, openai, pydantic"
 ```
 
 ## Troubleshooting
