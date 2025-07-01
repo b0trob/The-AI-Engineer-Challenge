@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAppStore } from '../store/useAppStore';
 import { MODELS, PREDEFINED_PROMPTS } from '../constants';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 
 interface SettingsDrawerProps {
   isOpen: boolean;
@@ -78,17 +79,25 @@ export default function SettingsDrawer({ isOpen, onClose, 'aria-label': ariaLabe
               aria-describedby={apiKeyError ? 'api-key-error' : undefined}
               aria-invalid={!!apiKeyError}
             />
-            {apiKeyError && (
-              <p id="api-key-error" className="text-destructive text-sm">
-                {apiKeyError}
-              </p>
-            )}
-            {isLoadingValidation && (
-              <p className="text-muted-foreground text-sm">Validating key...</p>
-            )}
-            {isApiKeyValid && (
-              <p className="text-green-600 text-sm">✓ API key is valid</p>
-            )}
+            {/* Feedback Row: always reserve space, animate icons, show message */}
+            <div className="flex items-center min-h-[2em] mt-1 gap-2" aria-live="polite">
+              {isLoadingValidation ? (
+                <>
+                  <Loader2 className="w-5 h-5 text-muted-foreground animate-spin" aria-hidden="true" />
+                  <span className="text-muted-foreground text-sm">Validating...</span>
+                </>
+              ) : isApiKeyValid ? (
+                <>
+                  <CheckCircle className="w-5 h-5 text-green-600" aria-hidden="true" />
+                  <span className="text-green-600 text-sm">API key is valid</span>
+                </>
+              ) : apiKeyError ? (
+                <>
+                  <XCircle className="w-5 h-5 text-destructive" aria-hidden="true" />
+                  <span id="api-key-error" className="text-destructive text-sm">{apiKeyError}</span>
+                </>
+              ) : null}
+            </div>
           </div>
 
           {/* AI Personality Section */}
