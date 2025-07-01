@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User, Settings, Trash2 } from 'lucide-react'
+import FormattedMessage from './components/FormattedMessage'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -298,7 +299,7 @@ export default function Home() {
                           : 'bg-secondary text-secondary-foreground'
                       }`}
                     >
-                      <p className="whitespace-pre-wrap text-sm sm:text-base">{message.content}</p>
+                      <FormattedMessage content={message.content} role={message.role} />
                       <p className={`text-xs mt-1 ${
                         message.role === 'user' 
                           ? 'text-primary-foreground/80' 
@@ -313,14 +314,17 @@ export default function Home() {
             )}
             {isLoading && (
               <div className="flex gap-2 sm:gap-3 justify-start">
-                <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center">
+                <div className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center animate-thinking">
                   <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
                 </div>
                 <div className="bg-secondary px-3 py-2 sm:px-4 sm:py-2 rounded-lg">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="flex items-center space-x-2">
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                      <div className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    </div>
+                    <span className="text-xs text-muted-foreground animate-pulse">AI is thinking...</span>
                   </div>
                 </div>
               </div>
@@ -329,7 +333,7 @@ export default function Home() {
           </div>
           {/* Input Form */}
           <div className="border-t border-border p-3 sm:p-4">
-            <form onSubmit={handleSendMessage} className="flex gap-2">
+            <form onSubmit={handleSendMessage} className="flex gap-2 group">
               <input
                 type="text"
                 value={inputMessage}
@@ -341,9 +345,9 @@ export default function Home() {
               <button
                 type="submit"
                 disabled={isLoading || !inputMessage.trim() || !apiKey.trim() || !!apiKeyError}
-                className="px-3 py-2 sm:px-4 sm:py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-3 py-2 sm:px-4 sm:py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 hover:scale-105 active:scale-95 hover:shadow-lg"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
               </button>
             </form>
             {!apiKey.trim() && (

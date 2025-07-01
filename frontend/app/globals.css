@@ -82,7 +82,13 @@ body {
     animation: animateIn 0.3s ease-out;
   }
   
-
+  .animate-typing {
+    animation: typing 1.5s ease-in-out infinite;
+  }
+  
+  .animate-thinking {
+    animation: thinking 2s ease-in-out infinite;
+  }
 }
 
 @keyframes animateIn {
@@ -93,6 +99,24 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes typing {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes thinking {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
   }
 }
 
